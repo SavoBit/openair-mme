@@ -228,8 +228,8 @@ pipeline {
               myShCmd('docker network connect ci-s6a ci-oai-hss', new_host_flag, new_host_user, new_host)
               Cassandra_IP = myShRetCmd('docker inspect --format="{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" ci-cassandra', new_host_flag, new_host_user, new_host)
               OAI_HSS_IP = myShRetCmd('docker exec -it ci-oai-hss /bin/bash -c "ifconfig eth1 | egrep inet" | sed -e "s@^.*inet @@" -e "s@  netmask.*@@"', new_host_flag, new_host_user, new_host)
-              sh "wget --quiet https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/ci-scripts/generateConfigFiles.py -O -O ci-scripts/generateHssConfigFiles.py"
-              sh "python3 ci-scripts/generateHssConfigFiles.py --kind=HSS --cassandra=192.168.17.2 --hss_s6a=192.168.31.2 --from_docker_file"
+              sh "wget --quiet https://raw.githubusercontent.com/OPENAIRINTERFACE/openair-hss/develop/ci-scripts/generateConfigFiles.py -O ci-scripts/generateHssConfigFiles.py"
+              sh "python3 ci-scripts/generateHssConfigFiles.py --kind=HSS --cassandra=${Cassandra_IP} --hss_s6a=${OAI_HSS_IP} --from_docker_file"
               copyTo2ndServer('hss-cfg.sh', new_host_flag, new_host_user, new_host)
               myShCmd('docker cp ./hss-cfg.sh ci-oai-hss:/openair-hss/scripts', new_host_flag, new_host_user, new_host)
               myShCmd('docker exec -it ci-oai-hss /bin/bash -c "cd /openair-hss/scripts && chmod 777 hss-cfg.sh && ./hss-cfg.sh" > archives/hss_config.log', new_host_flag, new_host_user, new_host)
@@ -238,7 +238,11 @@ pipeline {
           post {
             always {
               script {
-                copyFrom2ndServer('archives/hss_config.log', 'archives', new_host_flag, new_host_user, new_host)
+                try {
+                  copyFrom2ndServer('archives/hss_config.log', 'archives', new_host_flag, new_host_user, new_host)
+                } catch (Exception e) {
+                  echo "Failed to copy archives/hss_config.log"
+                }
               }
             }
             success {
