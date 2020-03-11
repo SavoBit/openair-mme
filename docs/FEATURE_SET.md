@@ -18,7 +18,6 @@
 2. [OpenAirInterface Core Network Fundamentals](#2-oai-core-network-fundamentals)
 3. [OpenAirInterface Core Network Deployment](#3-oai-core-network-deployment)
 4. [OpenAirInterface MME Feature List](./FEATURE_SET_MME.md)
-5. [OpenAirInterface HSS Feature List](./FEATURE_SET_HSS.md)
 
 # 1. OpenAirInterface Core Network Block Diagram #
 
@@ -58,5 +57,4 @@
    -  Server
    -  Container
    -  Virtual Machine
-
 
