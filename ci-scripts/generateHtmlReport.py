@@ -41,7 +41,7 @@ class HtmlReport():
 
 	def generate(self):
 		cwd = os.getcwd()
-		self.file = open(cwd + '/test_results_oai_cn.html', 'w')
+		self.file = open(cwd + '/test_results_oai_mme.html', 'w')
 		self.generateHeader()
 
 		self.analyze_sca_log()
@@ -346,31 +346,31 @@ class HtmlReport():
 				logfile.close()
 			if nfType == 'Cassandra':
 				if status and racCassandraMsg:
-					cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+					cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 					cell_msg += 'OK: ci-cassandra:\n'
 					cell_msg += ' -- started successfully\n'
 					cell_msg += ' -- service status is OK</b></pre></td>\n'
 				elif not racCassandraMsg:
-					cell_msg = '      <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
+					cell_msg = '	  <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
 					cell_msg += 'KO: ci-cassandra:\n'
 					cell_msg += ' -- started successfully\n'
 					cell_msg += ' -- service status is missing?</b></pre></td>\n'
 				else:
-					cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+					cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 					cell_msg += 'KO: ci-cassandra:\n'
 					cell_msg += ' -- did not start properly?</b></pre></td>\n'
 			else:
 				if status:
-					cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+					cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 					cell_msg += 'OK: ci-oai-' + nfType.lower() + ':\n'
 					cell_msg += ' -- started successfully</b></pre></td>\n'
 				else:
-					cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+					cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 					cell_msg += 'KO: ci-oai-' + nfType.lower() + ':\n'
 					cell_msg += ' -- did not start properly?</b></pre></td>\n'
 
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
@@ -385,7 +385,7 @@ class HtmlReport():
 
 	def analyze_install_log(self, nfType):
 		if nfType == 'Cassandra':
-			cell_msg = '      <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
+			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
 			cell_msg += 'N/A</b></pre></td>\n'
 			self.file.write(cell_msg)
 			return
@@ -405,17 +405,17 @@ class HtmlReport():
 							status = True
 				logfile.close()
 			if status:
-				cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 				cell_msg += 'OK:\n'
 			else:
-				cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 				cell_msg += 'KO:\n'
 			if nfType == 'HSS':
 				cell_msg += ' -- build_hss_rel14 --check-installed-software --force</b></pre></td>\n'
 			else:
 				cell_msg += ' -- build_mme --check-installed-software --force</b></pre></td>\n'
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
@@ -435,7 +435,7 @@ class HtmlReport():
 
 	def analyze_build_log(self, nfType):
 		if nfType == 'Cassandra':
-			cell_msg = '      <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
+			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
 			cell_msg += 'N/A</b></pre></td>\n'
 			self.file.write(cell_msg)
 			return
@@ -455,24 +455,24 @@ class HtmlReport():
 							status = True
 				logfile.close()
 			if status:
-				cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 				cell_msg += 'OK:\n'
 			else:
-				cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 				cell_msg += 'KO:\n'
 			if nfType == 'HSS':
 				cell_msg += ' -- build_hss_rel14 --clean --build-type Release</b></pre></td>\n'
 			else:
 				cell_msg += ' -- build_mme --clean --build-type Release</b></pre></td>\n'
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
 
 	def analyze_compile_log(self, nfType):
 		if nfType == 'Cassandra':
-			cell_msg = '      <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
+			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
 			cell_msg += 'N/A</b></pre></td>\n'
 			self.file.write(cell_msg)
 			return
@@ -497,16 +497,16 @@ class HtmlReport():
 						nb_warnings += 1
 				logfile.close()
 			if nb_warnings == 0 and nb_errors == 0:
-				cell_msg = '       <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 			elif nb_warnings < 20 and nb_errors == 0:
-				cell_msg = '       <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
+				cell_msg = '	   <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
 			else:
-				cell_msg = '       <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			if nb_errors > 0:
 				cell_msg += str(nb_errors) + ' errors found in compile log\n'
 			cell_msg += str(nb_warnings) + ' warnings found in compile log</b></pre></td>\n'
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
@@ -521,7 +521,7 @@ class HtmlReport():
 
 	def analyze_config_log(self, nfType):
 		if nfType == 'Cassandra':
-			cell_msg = '      <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
+			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
 			cell_msg += 'N/A</b></pre></td>\n'
 			self.file.write(cell_msg)
 			return
@@ -558,10 +558,10 @@ class HtmlReport():
 							nb_certificate += 1
 				logfile.close()
 			if status:
-				cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 				cell_msg += 'OK:\n'
 			else:
-				cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 				cell_msg += 'KO:\n'
 			if nfType == 'HSS':
 				cell_msg += ' -- ' + str(nb_subs) + ' users were provisioned\n'
@@ -576,7 +576,7 @@ class HtmlReport():
 				else:
 					cell_msg += ' -- certificates were NOT generated</b></pre></td>\n'
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
@@ -591,7 +591,7 @@ class HtmlReport():
 
 	def analyze_check_run_log(self, nfType):
 		if nfType == 'Cassandra':
-			cell_msg = '      <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
+			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
 			cell_msg += 'N/A</b></pre></td>\n'
 			self.file.write(cell_msg)
 			return
@@ -629,10 +629,10 @@ class HtmlReport():
 				logfile.close()
 			if nfType == 'HSS':
 				if nb_opc_generation > 0 and freeDiameterUp and connectionWithMME:
-					cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+					cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 					cell_msg += 'OK:\n'
 				else:
-					cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+					cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 					cell_msg += 'KO:\n'
 				cell_msg += '  -- ' + str(nb_opc_generation) + ' OPC were re-generated\n'
 				if freeDiameterUp:
@@ -646,10 +646,10 @@ class HtmlReport():
 				cell_msg += '</b></pre></td>\n'
 			if nfType == 'MME':
 				if freeDiameterUp and connectionWithHSS and sctp_status:
-					cell_msg = '      <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+					cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 					cell_msg += 'OK:\n'
 				else:
-					cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+					cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 					cell_msg += 'KO:\n'
 				if freeDiameterUp:
 					cell_msg += '  -- Free Diameter engine is UP\n'
@@ -665,7 +665,7 @@ class HtmlReport():
 					cell_msg += '  -- SCTP is KO?\n'
 				cell_msg += '</b></pre></td>\n'
 		else:
-			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
 
 		self.file.write(cell_msg)
@@ -673,11 +673,30 @@ class HtmlReport():
 	def testSummaryHeader(self):
 		self.file.write('  <h2>Test Summary</h2>\n')
 		self.file.write('  <div class="alert alert-warning">\n')
-		self.file.write('      <strong>Not performed yet. <span class="glyphicon glyphicon-warning-sign"></span></strong>\n')
+		self.file.write('	  <strong>Not performed yet. <span class="glyphicon glyphicon-warning-sign"></span></strong>\n')
 		self.file.write('  </div>\n')
 
 	def testSummaryFooter(self):
 		self.file.write('  <br>\n')
+
+def Usage():
+	print('----------------------------------------------------------------------------------------------------------------------')
+	print('generateHtmlReport.py')
+	print('   Generate an HTML report for the Jenkins pipeline on openair-mme.')
+	print('----------------------------------------------------------------------------------------------------------------------')
+	print('Usage: python3 generateHtmlReport.py [options]')
+	print('  --help  Show this help.')
+	print('---------------------------------------------------------------------------------------------- Mandatory Options -----')
+	print('  --job_name=[Jenkins Job name]')
+	print('  --job_id=[Jenkins Job Build ID]')
+	print('  --job_url=[Jenkins Job Build URL]')
+	print('  --git_url=[Git Repository URL]')
+	print('  --git_src_branch=[Git Source Branch Name]')
+	print('  --git_src_commit=[Git Source Commit SHA-ONE]')
+	print('----------------------------------------------------------------------------------------------- Optional Options -----')
+	print('  --git_pull_request=True')
+	print('  --git_target_branch=[Git Target Branch Name]')
+	print('  --git_target_commit=[Git Target Commit SHA-ONE]')
 
 #--------------------------------------------------------------------------------------------------------
 #
@@ -693,6 +712,7 @@ HTML = HtmlReport()
 while len(argvs) > 1:
 	myArgv = argvs.pop(1)
 	if re.match('^\-\-help$', myArgv, re.IGNORECASE):
+		Usage()
 		sys.exit(0)
 	elif re.match('^\-\-job_name=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-job_name=(.+)$', myArgv, re.IGNORECASE)
