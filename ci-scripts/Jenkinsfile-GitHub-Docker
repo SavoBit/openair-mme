@@ -119,7 +119,7 @@ pipeline {
               if (env.ghprbPullId != null) {
                 // Building a temporary image
                 myShCmd('docker image prune --force', new_host_flag, new_host_user, new_host)
-                myShCmd('docker build --target oai-mme --tag oai-mme:ci-temp --file ci-scripts/Dockerfile.ubuntu18.04-ci --build-arg EURECOM_PROXY="http://proxy.eurecom.fr:8080" --build-arg BUILD_FOR_CI="True" --build-arg CI_SRC_BRANCH="' + env.ghprbSourceBranch + '" --build-arg CI_SRC_COMMIT="' + env.ghprbActualCommit + '" --build-arg CI_DEST_BRANCH="develop" . > archives/mme_docker_image_build.log 2>&1', new_host_flag, new_host_user, new_host)
+                myShCmd('docker build --target oai-mme --tag oai-mme:ci-temp --file ci-scripts/Dockerfile.ubuntu18.04 --build-arg EURECOM_PROXY="http://proxy.eurecom.fr:8080" --build-arg BUILD_FOR_CI="True" --build-arg CI_SRC_BRANCH="' + env.ghprbSourceBranch + '" --build-arg CI_SRC_COMMIT="' + env.ghprbActualCommit + '" --build-arg CI_DEST_BRANCH="develop" . > archives/mme_docker_image_build.log 2>&1', new_host_flag, new_host_user, new_host)
               } else {
                 // Currently this pipeline only runs for pushes to `develop` branch
                 // First clean image registry
