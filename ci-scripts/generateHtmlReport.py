@@ -47,12 +47,18 @@ class HtmlReport():
 		self.analyze_sca_log()
 
 		self.buildSummaryHeader()
-		self.containerStartRow()
+		self.initialGitSetup()
 		self.installLibsPackagesRow()
 		self.buildCompileRows()
-		self.configurationRow()
-		self.startStopCheckRow()
+		self.copyToTargetImage()
+		self.copyConfToolsToTargetImage()
+		self.imageSizeRow()
 		self.buildSummaryFooter()
+
+		self.sanityCheckSummaryHeader()
+		self.containerStartRow()
+		self.startStopCheckRow()
+		self.sanityCheckSummaryFooter()
 
 		self.testSummaryHeader()
 		self.testSummaryFooter()
@@ -300,24 +306,421 @@ class HtmlReport():
 			self.file.write('  </div>\n')
 
 	def buildSummaryHeader(self):
-		self.file.write('  <h2>Build Summary</h2>\n')
+		self.file.write('  <h2>Docker Image Build Summary</h2>\n')
 		self.file.write('  <table class="table-bordered" width = "100%" align = "center" border = "1">\n')
 		self.file.write('	  <tr bgcolor="#33CCFF" >\n')
 		self.file.write('		<th>Stage Name</th>\n')
-		self.file.write('		<th>Cassandra Service</th>\n')
+		self.file.write('		<th>Image Kind</th>\n')
 		self.file.write('		<th>OAI MME cNF</th>\n')
-		self.file.write('		<th>OAI HSS cNF</th>\n')
+		self.file.write('	  </tr>\n')
 
 	def buildSummaryFooter(self):
 		self.file.write('  </table>\n')
 		self.file.write('  <br>\n')
 
+	def initialGitSetup(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td bgcolor="lightcyan" >Initial Git Setup</td>\n')
+		self.analyze_docker_build_git_part('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_docker_build_git_part(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Builder Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			status = False
+			section_start_pattern = 'git config --global http'
+			section_end_pattern = 'WORKDIR /openair-mme/scripts'
+			section_status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+						status = True
+				logfile.close()
+
+			if status:
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:\n'
+				cell_msg += ' -- All Git Operations went successfully</b></pre></td>\n'
+			else:
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO::\n'
+				cell_msg += ' -- Some Git Operations went WRONG</b></pre></td>\n'
+		else:
+			cell_msg = '      <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def installLibsPackagesRow(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td bgcolor="lightcyan" >SW libs and packages Installation</td>\n')
+		self.analyze_install_log('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_install_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Builder Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			status = False
+			section_start_pattern = 'build_mme --check-installed-software --force'
+			section_end_pattern = 'build_mme --clean --build-type Release'
+			section_status = False
+			package_install = False
+			freeDiameter_build_start = False
+			freeDiameter_build = False
+			asn1c_build_start = False
+			asn1c_build = False
+			liblfds7_build_start = False
+			liblfds7_build = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+					if section_status:
+						result = re.search('MME software installation successful', line)
+						if result is not None:
+							status = True
+						result = re.search('git submodule init', line)
+						if result is not None:
+							package_install = True
+						result = re.search('Build files have been written to: /openair-mme/build/git_submodules/freeDiameter/build', line)
+						if result is not None:
+							freeDiameter_build_start = True
+						if freeDiameter_build_start:
+							result = re.search('Installing: /usr/local/lib/freeDiameter/dict_S9', line)
+							if result is not None:
+								freeDiameter_build_start = False
+								freeDiameter_build = True
+						result = re.search('Making install in libasn1parser', line)
+						if result is not None:
+							asn1c_build_start = True
+						if asn1c_build_start:
+							result = re.search('libtool: install: /usr/bin/install -c asn1c /usr/local/bin/asn1c', line)
+							if result is not None:
+								asn1c_build_start = False
+								asn1c_build = True
+						result = re.search('Downloading liblfds7', line)
+						if result is not None:
+							liblfds7_build_start = True
+						if liblfds7_build_start:
+							result = re.search('Install networking packages', line)
+							if result is not None:
+								liblfds7_build_start = False
+								liblfds7_build = True
+				logfile.close()
+			if status:
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:\n'
+			else:
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO:\n'
+			cell_msg += ' -- build_mme --check-installed-software --force\n'
+			if package_install:
+				cell_msg += '   ** Packages Installation: OK\n'
+			else:
+				cell_msg += '   ** Packages Installation: KO\n'
+			if freeDiameter_build:
+				cell_msg += '   ** FreeDiameter Installation: OK\n'
+			else:
+				cell_msg += '   ** FreeDiameter Installation: KO\n'
+			if asn1c_build:
+				cell_msg += '   ** ASN1C Installation: OK\n'
+			else:
+				cell_msg += '   ** ASN1C Installation: KO\n'
+			if liblfds7_build:
+				cell_msg += '   ** lfds7 Installation: OK\n'
+			else:
+				cell_msg += '   ** lfds7 Installation: KO\n'
+			cell_msg += '</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def buildCompileRows(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td rowspan=2 bgcolor="lightcyan" >cNF Compile / Build</td>\n')
+		self.analyze_build_log('MME')
+		self.file.write('	 </tr>\n')
+		self.file.write('	 <tr>\n')
+		self.analyze_compile_log('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_build_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Builder Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			status = False
+			section_start_pattern = 'build_mme --clean --build-type Release'
+			section_end_pattern = 'cat /openair-mme/build/log/mme'
+			section_status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+					if section_status:
+						result = re.search('mmme installed', line)
+						if result is not None:
+							status = True
+				logfile.close()
+			if status:
+				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:\n'
+			else:
+				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO:\n'
+			cell_msg += ' -- build_mme --clean --build-type Release</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def analyze_compile_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Builder Image</td>\n')
+
+		cwd = os.getcwd()
+		nb_errors = 0
+		nb_warnings = 0
+
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			section_start_pattern = 'cat /openair-mme/build/log/mme'
+			section_end_pattern = 'FROM ubuntu:bionic as oai-mme$'
+			section_status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+					if section_status:
+						result = re.search('error:', line)
+						if result is not None:
+							nb_errors += 1
+						result = re.search('warning:', line)
+						if result is not None:
+							nb_warnings += 1
+				logfile.close()
+			if nb_warnings == 0 and nb_errors == 0:
+				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+			elif nb_warnings < 20 and nb_errors == 0:
+				cell_msg = '	   <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
+			else:
+				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			if nb_errors > 0:
+				cell_msg += str(nb_errors) + ' errors found in compile log\n'
+			cell_msg += str(nb_warnings) + ' warnings found in compile log</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def copyToTargetImage(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td bgcolor="lightcyan" >SW libs Installation / Copy from Builder</td>\n')
+		self.analyze_copy_log('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_copy_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Target Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			section_start_pattern = 'FROM ubuntu:bionic as oai-mme$'
+			section_end_pattern = 'WORKDIR /openair-mme/etc'
+			section_status = False
+			status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+						status = True
+				logfile.close()
+			if status:
+				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:\n'
+			else:
+				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO:\n'
+			cell_msg += '</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def copyConfToolsToTargetImage(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td bgcolor="lightcyan" >Copy Template Conf / Tools from Builder</td>\n')
+		self.analyze_copy_conf_tool_log('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_copy_conf_tool_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Target Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			section_start_pattern = 'WORKDIR /openair-mme/etc'
+			section_end_pattern = 'Successfully tagged oai-mme'
+			section_status = False
+			status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+						status = True
+				logfile.close()
+			if status:
+				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:\n'
+			else:
+				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO:\n'
+			cell_msg += '</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def imageSizeRow(self):
+		self.file.write('	 <tr>\n')
+		self.file.write('	   <td bgcolor="lightcyan" >Image Size</td>\n')
+		self.analyze_image_size_log('MME')
+		self.file.write('	 </tr>\n')
+
+	def analyze_image_size_log(self, nfType):
+		if nfType != 'MME':
+			self.file.write('      <td>N/A</td>\n')
+			self.file.write('	   <td>Wrong NF Type for this Report</td>\n')
+			return
+
+		logFileName = 'mme_docker_image_build.log'
+		self.file.write('      <td>Target Image</td>\n')
+
+		cwd = os.getcwd()
+		if os.path.isfile(cwd + '/archives/' + logFileName):
+			section_start_pattern = 'Successfully tagged oai-mme'
+			section_end_pattern = 'OAI-MME DOCKER IMAGE BUILD'
+			section_status = False
+			status = False
+			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
+				for line in logfile:
+					result = re.search(section_start_pattern, line)
+					if result is not None:
+						section_status = True
+					result = re.search(section_end_pattern, line)
+					if result is not None:
+						section_status = False
+					if section_status:
+						if self.git_pull_request:
+							result = re.search('oai-mme *ci-temp', line)
+						else:
+							result = re.search('oai-mme *develop', line)
+						if result is not None:
+							result = re.search('ago *([0-9A-Z]+)', line)
+							if result is not None:
+								size = result.group(1)
+								status = True
+				logfile.close()
+			if status:
+				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
+				cell_msg += 'OK:  ' + size + '\n'
+			else:
+				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+				cell_msg += 'KO:\n'
+			cell_msg += '</b></pre></td>\n'
+		else:
+			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
+			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
+
+		self.file.write(cell_msg)
+
+	def sanityCheckSummaryHeader(self):
+		self.file.write('  <h2>Sanity Check Deployment Summary</h2>\n')
+		self.file.write('  <table class="table-bordered" width = "100%" align = "center" border = "1">\n')
+		self.file.write('	  <tr bgcolor="#33CCFF" >\n')
+		self.file.write('		<th>Stage Name</th>\n')
+		self.file.write('		<th>OAI MME cNF</th>\n')
+		self.file.write('		<th>OAI HSS cNF</th>\n')
+		self.file.write('		<th>Cassandra</th>\n')
+		self.file.write('	  </tr>\n')
+
+	def sanityCheckSummaryFooter(self):
+		self.file.write('  </table>\n')
+		self.file.write('  <br>\n')
+
 	def containerStartRow(self):
 		self.file.write('	 <tr>\n')
-		self.file.write('	   <td bgcolor="lightcyan" >Starting Docker Containers</td>\n')
-		self.analyze_docker_start_log('Cassandra')
-		self.analyze_docker_start_log('HSS')
+		self.file.write('	   <td bgcolor="lightcyan" >Starting/Configuring Docker Containers</td>\n')
 		self.analyze_docker_start_log('MME')
+		self.analyze_docker_start_log('HSS')
+		self.analyze_docker_start_log('Cassandra')
 		self.file.write('	 </tr>\n')
 
 	def analyze_docker_start_log(self, nfType):
@@ -325,13 +728,16 @@ class HtmlReport():
 			logFileName = 'cassandra_status.log'
 			pattern = 'CASSANDRA START:'
 		else:
-			logFileName = nfType.lower() + '-docker-start.log'
-			pattern = 'OAI-' + nfType.upper() + ' START:'
+			logFileName = nfType.lower() + '_config.log'
+			pattern = 'OAI-' + nfType.upper() + ' CONFIG:'
 
 		cwd = os.getcwd()
 		if os.path.isfile(cwd + '/archives/' + logFileName):
 			status = False
 			racCassandraMsg = False
+			nb_subs = 0
+			nb_mme_isdn = 0
+			nb_certificate = 0
 			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
 				for line in logfile:
 					result = re.search(pattern, line)
@@ -343,6 +749,20 @@ class HtmlReport():
 						result = re.search('RAC1', line)
 						if result is not None:
 							racCassandraMsg = True
+					if nfType == "HSS":
+						result = re.search('Subscription-Data', line)
+						if result is not None:
+							nb_subs += 1
+						result = re.search('mme-isdn', line)
+						if result is not None:
+							nb_mme_isdn += 1
+						result = re.search('Certificate is to be certified', line)
+						if result is not None:
+							nb_certificate += 1
+					if nfType == "MME":
+						result = re.search('Certificate is to be certified', line)
+						if result is not None:
+							nb_certificate += 1
 				logfile.close()
 			if nfType == 'Cassandra':
 				if status and racCassandraMsg:
@@ -363,218 +783,23 @@ class HtmlReport():
 				if status:
 					cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
 					cell_msg += 'OK: ci-oai-' + nfType.lower() + ':\n'
-					cell_msg += ' -- started successfully</b></pre></td>\n'
+					cell_msg += ' -- started successfully\n'
 				else:
 					cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 					cell_msg += 'KO: ci-oai-' + nfType.lower() + ':\n'
-					cell_msg += ' -- did not start properly?</b></pre></td>\n'
-
-		else:
-			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
-
-		self.file.write(cell_msg)
-
-	def installLibsPackagesRow(self):
-		self.file.write('	 <tr>\n')
-		self.file.write('	   <td bgcolor="lightcyan" >SW libs and packages Installation</td>\n')
-		self.analyze_install_log('Cassandra')
-		self.analyze_install_log('HSS')
-		self.analyze_install_log('MME')
-		self.file.write('	 </tr>\n')
-
-	def analyze_install_log(self, nfType):
-		if nfType == 'Cassandra':
-			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
-			cell_msg += 'N/A</b></pre></td>\n'
-			self.file.write(cell_msg)
-			return
-
-		logFileName = nfType.lower() + '_install.log'
-		pattern = 'OAI-' + nfType.upper() + ' SW INSTALL:'
-
-		cwd = os.getcwd()
-		if os.path.isfile(cwd + '/archives/' + logFileName):
-			status = False
-			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
-				for line in logfile:
-					result = re.search(pattern, line)
-					if result is not None:
-						result = re.search('OK', line)
-						if result is not None:
-							status = True
-				logfile.close()
-			if status:
-				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
-				cell_msg += 'OK:\n'
-			else:
-				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-				cell_msg += 'KO:\n'
-			if nfType == 'HSS':
-				cell_msg += ' -- build_hss_rel14 --check-installed-software --force</b></pre></td>\n'
-			else:
-				cell_msg += ' -- build_mme --check-installed-software --force</b></pre></td>\n'
-		else:
-			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
-
-		self.file.write(cell_msg)
-
-	def buildCompileRows(self):
-		self.file.write('	 <tr>\n')
-		self.file.write('	   <td rowspan=2 bgcolor="lightcyan" >cNF Compile / Build</td>\n')
-		self.analyze_build_log('Cassandra')
-		self.analyze_build_log('HSS')
-		self.analyze_build_log('MME')
-		self.file.write('	 </tr>\n')
-		self.file.write('	 <tr>\n')
-		self.analyze_compile_log('Cassandra')
-		self.analyze_compile_log('HSS')
-		self.analyze_compile_log('MME')
-		self.file.write('	 </tr>\n')
-
-	def analyze_build_log(self, nfType):
-		if nfType == 'Cassandra':
-			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
-			cell_msg += 'N/A</b></pre></td>\n'
-			self.file.write(cell_msg)
-			return
-
-		logFileName = nfType.lower() + '_build.log'
-		pattern = 'OAI-' + nfType.upper() + ' BUILD:'
-
-		cwd = os.getcwd()
-		if os.path.isfile(cwd + '/archives/' + logFileName):
-			status = False
-			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
-				for line in logfile:
-					result = re.search(pattern, line)
-					if result is not None:
-						result = re.search('OK', line)
-						if result is not None:
-							status = True
-				logfile.close()
-			if status:
-				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
-				cell_msg += 'OK:\n'
-			else:
-				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-				cell_msg += 'KO:\n'
-			if nfType == 'HSS':
-				cell_msg += ' -- build_hss_rel14 --clean --build-type Release</b></pre></td>\n'
-			else:
-				cell_msg += ' -- build_mme --clean --build-type Release</b></pre></td>\n'
-		else:
-			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
-
-		self.file.write(cell_msg)
-
-	def analyze_compile_log(self, nfType):
-		if nfType == 'Cassandra':
-			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
-			cell_msg += 'N/A</b></pre></td>\n'
-			self.file.write(cell_msg)
-			return
-
-		if nfType == 'MME':
-			logFileName = nfType.lower() + '_compile.log'
-		else:
-			logFileName = nfType.lower() + '_build.log'
-
-		cwd = os.getcwd()
-		nb_errors = 0
-		nb_warnings = 0
-
-		if os.path.isfile(cwd + '/archives/' + logFileName):
-			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
-				for line in logfile:
-					result = re.search('error:', line)
-					if result is not None:
-						nb_errors += 1
-					result = re.search('warning:', line)
-					if result is not None:
-						nb_warnings += 1
-				logfile.close()
-			if nb_warnings == 0 and nb_errors == 0:
-				cell_msg = '	   <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
-			elif nb_warnings < 20 and nb_errors == 0:
-				cell_msg = '	   <td bgcolor="Orange"><pre style="border:none; background-color:Orange"><b>'
-			else:
-				cell_msg = '	   <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-			if nb_errors > 0:
-				cell_msg += str(nb_errors) + ' errors found in compile log\n'
-			cell_msg += str(nb_warnings) + ' warnings found in compile log</b></pre></td>\n'
-		else:
-			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
-
-		self.file.write(cell_msg)
-
-	def configurationRow(self):
-		self.file.write('	 <tr>\n')
-		self.file.write('	   <td bgcolor="lightcyan" >cNF Configuration</td>\n')
-		self.analyze_config_log('Cassandra')
-		self.analyze_config_log('HSS')
-		self.analyze_config_log('MME')
-		self.file.write('	 </tr>\n')
-
-	def analyze_config_log(self, nfType):
-		if nfType == 'Cassandra':
-			cell_msg = '	  <td bgcolor="LightGray"><pre style="border:none; background-color:LightGray"><b>'
-			cell_msg += 'N/A</b></pre></td>\n'
-			self.file.write(cell_msg)
-			return
-
-		logFileName = nfType.lower() + '_config.log'
-		pattern = 'OAI-' + nfType.upper() + ' CONFIG:'
-
-		cwd = os.getcwd()
-		if os.path.isfile(cwd + '/archives/' + logFileName):
-			status = False
-			nb_subs = 0
-			nb_mme_isdn = 0
-			nb_certificate = 0
-			with open(cwd + '/archives/' + logFileName, 'r') as logfile:
-				for line in logfile:
-					result = re.search(pattern, line)
-					if result is not None:
-						result = re.search('OK', line)
-						if result is not None:
-							status = True
-					if nfType == "HSS":
-						result = re.search('Subscription-Data', line)
-						if result is not None:
-							nb_subs += 1
-						result = re.search('mme-isdn', line)
-						if result is not None:
-							nb_mme_isdn += 1
-						result = re.search('Certificate is to be certified', line)
-						if result is not None:
-							nb_certificate += 1
-					if nfType == "MME":
-						result = re.search('Certificate is to be certified', line)
-						if result is not None:
-							nb_certificate += 1
-				logfile.close()
-			if status:
-				cell_msg = '	  <td bgcolor="LimeGreen"><pre style="border:none; background-color:LimeGreen"><b>'
-				cell_msg += 'OK:\n'
-			else:
-				cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
-				cell_msg += 'KO:\n'
-			if nfType == 'HSS':
-				cell_msg += ' -- ' + str(nb_subs) + ' users were provisioned\n'
-				cell_msg += ' -- ' + str(int(nb_mme_isdn / 2)) + ' mme instance(s) were provisioned\n'
-				if nb_certificate > 0:
-					cell_msg += ' -- certificates were generated</b></pre></td>\n'
-				else:
-					cell_msg += ' -- certificates were NOT generated</b></pre></td>\n'
-			if nfType == 'MME':
-				if nb_certificate > 0:
-					cell_msg += ' -- certificates were generated</b></pre></td>\n'
-				else:
-					cell_msg += ' -- certificates were NOT generated</b></pre></td>\n'
+					cell_msg += ' -- did not start properly?\n'
+				if nfType == 'HSS':
+					cell_msg += ' -- ' + str(nb_subs) + ' users were provisioned\n'
+					cell_msg += ' -- ' + str(int(nb_mme_isdn / 2)) + ' mme instance(s) were provisioned\n'
+					if nb_certificate > 0:
+						cell_msg += ' -- certificates were generated</b></pre></td>\n'
+					else:
+						cell_msg += ' -- certificates were NOT generated</b></pre></td>\n'
+				if nfType == 'MME':
+					if nb_certificate > 0:
+						cell_msg += ' -- certificates were generated</b></pre></td>\n'
+					else:
+						cell_msg += ' -- certificates were NOT generated</b></pre></td>\n'
 		else:
 			cell_msg = '	  <td bgcolor="Tomato"><pre style="border:none; background-color:Tomato"><b>'
 			cell_msg += 'KO: logfile (' + logFileName + ') not found</b></pre></td>\n'
@@ -584,9 +809,9 @@ class HtmlReport():
 	def startStopCheckRow(self):
 		self.file.write('	 <tr>\n')
 		self.file.write('	   <td bgcolor="lightcyan" >cNF Check Start / Stop</td>\n')
-		self.analyze_check_run_log('Cassandra')
-		self.analyze_check_run_log('HSS')
 		self.analyze_check_run_log('MME')
+		self.analyze_check_run_log('HSS')
+		self.analyze_check_run_log('Cassandra')
 		self.file.write('	 </tr>\n')
 
 	def analyze_check_run_log(self, nfType):
