@@ -1,6 +1,0 @@
-build
-bin/smsrouter
-conf/*pem
-conf/demoCA
-out.txt
-logs
