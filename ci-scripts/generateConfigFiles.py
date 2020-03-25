@@ -46,6 +46,19 @@ class mmeConfigGen():
 			mmeFile.write('cd /openair-mme/scripts\n')
 		else:
 			mmeFile.write('cd /home/scripts\n')
+
+		# We cannot have S10 and S11 sharing the same interface and the same IP address since they are using the same port
+		useLoopBackForS10 = False
+		if (self.mme_s10_name == self.mme_s11_name) and (self.mme_s10_IP == self.mme_s11_IP):
+			print ('Using the same interface name and the same IP address for S11 and S10 is not allowed.')
+			print ('Starting a virtual interface on loopback for S10')
+			useLoopBackForS10 = True
+			mmeFile.write('\n')
+			mmeFile.write('# Using the same interface name and the same IP address for S11 and S10 is not allowed.\n')
+			mmeFile.write('# Starting a virtual interface on loopback for S10\n')
+			mmeFile.write('ifconfig lo:s10 127.0.0.10 up\n')
+			mmeFile.write('echo "ifconfig lo:s10 127.0.0.10 up --> OK"\n')
+
 		mmeFile.write('\n')
 		mmeFile.write('INSTANCE=1\n')
 		if self.fromDockerFile:
@@ -86,8 +99,12 @@ class mmeConfigGen():
 		mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S1_MME@]=\'' + self.mme_s1c_IP + '/24\'\n')
 		mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S11@]=\'' + self.mme_s11_name + '\'\n')
 		mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S11@]=\'' + self.mme_s11_IP + '/24\'\n')
-		mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S10@]=\'' + self.mme_s10_name + '\'\n')
-		mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S10@]=\'' + self.mme_s10_IP + '/24\'\n')
+		if useLoopBackForS10:
+			mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S10@]=\'lo:s10\'\n')
+			mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S10@]=\'127.0.0.10/24\'\n')
+		else:
+			mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S10@]=\'' + self.mme_s10_name + '\'\n')
+			mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S10@]=\'' + self.mme_s10_IP + '/24\'\n')
 		mmeFile.write('MME_CONF[@OUTPUT@]=\'CONSOLE\'\n')
 		mmeFile.write('MME_CONF[@SGW_IPV4_ADDRESS_FOR_S11_0@]=\'' + self.spgwc0_s11_IP + '\'\n')
 		mmeFile.write('MME_CONF[@PEER_MME_IPV4_ADDRESS_FOR_S10_0@]=\'0.0.0.0/24\'\n')
