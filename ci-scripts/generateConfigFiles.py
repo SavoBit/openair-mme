@@ -23,6 +23,7 @@
 import os
 import re
 import sys
+import ipaddress
 
 class mmeConfigGen():
 	def __init__(self):
@@ -36,6 +37,12 @@ class mmeConfigGen():
 		self.mme_s11_IP = ''
 		self.mme_s11_name = ''
 		self.spgwc0_s11_IP = ''
+		self.mme_gid = '32768'
+		self.mme_code = '3'
+		self.mcc = '208'
+		self.mnc = '93'
+		self.tac_list = "600 601 602"
+		self.realm = 'openairinterface.org'
 		self.fromDockerFile = False
 
 	def GenerateMMEConfigurer(self):
@@ -66,7 +73,7 @@ class mmeConfigGen():
 		else:
 			mmeFile.write('PREFIX=\'/usr/local/etc/oai\'\n')
 		# The following variables could be later be passed as parameters
-		mmeFile.write('MY_REALM=\'openairinterface.org\'\n')
+		mmeFile.write('MY_REALM=\'' + self.realm + '\'\n')
 		mmeFile.write('\n')
 		if not self.fromDockerFile:
 			mmeFile.write('rm -Rf $PREFIX\n')
@@ -88,13 +95,23 @@ class mmeConfigGen():
 		mmeFile.write('MME_CONF[@HSS_HOSTNAME@]=\'hss\'\n')
 		mmeFile.write('MME_CONF[@HSS_FQDN@]="${MME_CONF[@HSS_HOSTNAME@]}.${MME_CONF[@REALM@]}"\n')
 		mmeFile.write('MME_CONF[@HSS_IP_ADDR@]="' + self.hss_s6a_IP + '"\n')
-		mmeFile.write('MME_CONF[@MCC@]=\'208\'\n')
-		mmeFile.write('MME_CONF[@MNC@]=\'93\'\n')
-		mmeFile.write('MME_CONF[@MME_GID@]=\'32768\'\n')
-		mmeFile.write('MME_CONF[@MME_CODE@]=\'3\'\n')
-		mmeFile.write('MME_CONF[@TAC_0@]=\'600\'\n')
-		mmeFile.write('MME_CONF[@TAC_1@]=\'601\'\n')
-		mmeFile.write('MME_CONF[@TAC_2@]=\'602\'\n')
+		mmeFile.write('MME_CONF[@MCC@]=\'' + self.mcc + '\'\n')
+		mmeFile.write('MME_CONF[@MNC@]=\'' + self.mnc + '\'\n')
+		mmeFile.write('MME_CONF[@MME_GID@]=\'' + self.mme_gid + '\'\n')
+		mmeFile.write('MME_CONF[@MME_CODE@]=\'' + self.mme_code + '\'\n')
+		tacs = self.tac_list.split();
+		if len(tacs) < 3:
+			i = len(tacs)
+			base_tac = int(tacs[i - 1]) + 1
+			while (i < 3):
+				tacs.append(str(base_tac))
+				base_tac += 1
+				i += 1
+		i = 0
+		while i < 3:
+			mmeFile.write('MME_CONF[@TAC_' + str(i) + '@]=\'' + str(tacs[i]) + '\'\n')
+			i += 1
+
 		mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S1_MME@]=\'' + self.mme_s1c_name + '\'\n')
 		mmeFile.write('MME_CONF[@MME_IPV4_ADDRESS_FOR_S1_MME@]=\'' + self.mme_s1c_IP + '/24\'\n')
 		mmeFile.write('MME_CONF[@MME_INTERFACE_NAME_FOR_S11@]=\'' + self.mme_s11_name + '\'\n')
@@ -118,7 +135,7 @@ class mmeConfigGen():
 		mmeFile.write('\n')
 		mmeFile.write('MME_CONF[@MCC_SGW_0@]=${MME_CONF[@MCC@]}\n')
 		mmeFile.write('MME_CONF[@MNC3_SGW_0@]=`printf "%03d\\n" $(echo ${MME_CONF[@MNC@]} | sed -e "s/^0*//")`\n')
-		mmeFile.write('TAC_SGW_0=\'600\'\n')
+		mmeFile.write('TAC_SGW_0=\'' + tacs[0] + '\'\n')
 		mmeFile.write('tmph=`echo "$TAC_SGW_0 / 256" | bc`\n')
 		mmeFile.write('tmpl=`echo "$TAC_SGW_0 % 256" | bc`\n')
 		mmeFile.write('MME_CONF[@TAC-LB_SGW_0@]=`printf "%02x\\n" $tmpl`\n')
@@ -126,7 +143,7 @@ class mmeConfigGen():
 		mmeFile.write('\n')
 		mmeFile.write('MME_CONF[@MCC_MME_0@]=${MME_CONF[@MCC@]}\n')
 		mmeFile.write('MME_CONF[@MNC3_MME_0@]=`printf "%03d\\n" $(echo ${MME_CONF[@MNC@]} | sed -e "s/^0*//")`\n')
-		mmeFile.write('TAC_MME_0=\'601\'\n')
+		mmeFile.write('TAC_MME_0=\'' + tacs[1] + '\'\n')
 		mmeFile.write('tmph=`echo "$TAC_MME_0 / 256" | bc`\n')
 		mmeFile.write('tmpl=`echo "$TAC_MME_0 % 256" | bc`\n')
 		mmeFile.write('MME_CONF[@TAC-LB_MME_0@]=`printf "%02x\\n" $tmpl`\n')
@@ -134,7 +151,7 @@ class mmeConfigGen():
 		mmeFile.write('\n')
 		mmeFile.write('MME_CONF[@MCC_MME_1@]=${MME_CONF[@MCC@]}\n')
 		mmeFile.write('MME_CONF[@MNC3_MME_1@]=`printf "%03d\\n" $(echo ${MME_CONF[@MNC@]} | sed -e "s/^0*//")`\n')
-		mmeFile.write('TAC_MME_1=\'602\'\n')
+		mmeFile.write('TAC_MME_1=\'' + tacs[2] + '\'\n')
 		mmeFile.write('tmph=`echo "$TAC_MME_1 / 256" | bc`\n')
 		mmeFile.write('tmpl=`echo "$TAC_MME_1 % 256" | bc`\n')
 		mmeFile.write('MME_CONF[@TAC-LB_MME_1@]=`printf "%02x\\n" $tmpl`\n')
@@ -163,7 +180,7 @@ def Usage():
 	print('----------------------------------------------------------------------------------------------------------------------')
 	print('Usage: python3 generateConfigFiles.py [options]')
 	print('  --help  Show this help.')
-	print('---------------------------------------------------------------------------------------------------- HSS Options -----')
+	print('---------------------------------------------------------------------------------------------------- MME Options -----')
 	print('  --kind=MME')
 	print('  --hss_s6a=[HSS S6A Interface IP server]')
 	print('  --mme_s6a=[MME S6A Interface IP server]')
@@ -174,6 +191,13 @@ def Usage():
 	print('  --mme_s11_IP=[MME S11 Interface IP address]')
 	print('  --mme_s11_name=[MME S11 Interface name]')
 	print('  --spgwc0_s11_IP=[SPGW-C Instance 0 - S11 Interface IP address]')
+	print('---------------------------------------------------------------------------------------------- MME Not Mandatory -----')
+	print('  --mme_gid=[MME Group ID for GUMMEI]')
+	print('  --mme_code=[MME code for GUMMEI]')
+	print('  --mcc=[MCC for TAI list and GUMMEI]')
+	print('  --mnc=[MNC for TAI list and GUMMEI]')
+	print('  --tac_list=["TACs for managed TAIs"]')
+	print('  --realm=["REALM"]')
 	print('  --from_docker_file')
 
 argvs = sys.argv
@@ -217,6 +241,24 @@ while len(argvs) > 1:
 	elif re.match('^\-\-spgwc0_s11_IP=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-spgwc0_s11_IP=(.+)$', myArgv, re.IGNORECASE)
 		myMME.spgwc0_s11_IP = matchReg.group(1)
+	elif re.match('^\-\-mme_gid=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-mme_gid=(.+)$', myArgv, re.IGNORECASE)
+		myMME.mme_gid = matchReg.group(1)
+	elif re.match('^\-\-mme_code=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-mme_code=(.+)$', myArgv, re.IGNORECASE)
+		myMME.mme_code = matchReg.group(1)
+	elif re.match('^\-\-mcc=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-mcc=(.+)$', myArgv, re.IGNORECASE)
+		myMME.mcc = matchReg.group(1)
+	elif re.match('^\-\-mnc=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-mnc=(.+)$', myArgv, re.IGNORECASE)
+		myMME.mnc = matchReg.group(1)
+	elif re.match('^\-\-tac_list=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-tac_list=(.+)$', myArgv, re.IGNORECASE)
+		myMME.tac_list = str(matchReg.group(1))
+	elif re.match('^\-\-realm=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-realm=(.+)$', myArgv, re.IGNORECASE)
+		myMME.realm = matchReg.group(1)
 	elif re.match('^\-\-from_docker_file', myArgv, re.IGNORECASE):
 		myMME.fromDockerFile = True
 	else:
