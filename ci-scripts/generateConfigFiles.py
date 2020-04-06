@@ -23,7 +23,7 @@
 import os
 import re
 import sys
-import ipaddress
+#import ipaddress
 
 class mmeConfigGen():
 	def __init__(self):
