@@ -117,6 +117,7 @@ then
     exit 1
 fi
 
+# Use Dummy credentials for merge
 git config user.email "jenkins@openairinterface.org"
 git config user.name "OAI Jenkins"
 
