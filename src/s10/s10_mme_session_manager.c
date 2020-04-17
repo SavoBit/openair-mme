@@ -353,7 +353,7 @@ int s10_mme_handle_forward_relocation_request(nw_gtpv2c_stack_handle_t *stack_p,
                    "Destination TEID of S10 Forward Relocation Request is not "
                    "0, instead " TEID_FMT
                    ". Ignoring S10 Forward Relocation Request. \n",
-                   req_p->teid);
+                   teid);
     return RETURNerror;
   }
 
@@ -1327,7 +1327,7 @@ int s10_mme_handle_context_request(nw_gtpv2c_stack_handle_t *stack_p,
         LOG_S10,
         "Destination TEID of S10 Context Request is not 0, instead " TEID_FMT
         ". Ignoring s10 context request. \n",
-        req_p->teid);
+        teid);
     return RETURNerror;
   }
 
