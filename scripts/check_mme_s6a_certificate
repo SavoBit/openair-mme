@@ -37,11 +37,28 @@ function _create_mme_certs()
   local    output_path=$(readlink -e $1)
   local    fqdn=$2
 
-  cd /tmp
-  rm -rf /tmp/demoCA
-  mkdir /tmp/demoCA
-  echo 01 > /tmp/demoCA/serial
-  touch /tmp/demoCA/index.txt
+  if [[ -v OS_BASEDISTRO ]]
+  then
+    echo_success "Nothing to be done."
+  else
+    OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
+    case "$OS_DISTRO" in
+      fedora) OS_BASEDISTRO="fedora";;
+      rhel)   OS_BASEDISTRO="fedora";;
+      centos) OS_BASEDISTRO="fedora";;
+      debian) OS_BASEDISTRO="debian";;
+      ubuntu) OS_BASEDISTRO="debian";;
+    esac
+  fi
+
+  rm -rf demoCA
+  mkdir demoCA
+  echo 01 > demoCA/serial
+  touch demoCA/index.txt
+  if [[ "$OS_BASEDISTRO" == "debian" ]]
+  then
+    echo 'unique_subject = yes' > demoCA/index.txt.attr
+  fi
 
   echo "Creating MME certificate for user '$fqdn'"
   # Create a Root Certification Authority Certificate
@@ -56,7 +73,8 @@ function _create_mme_certs()
   # Certification authority
   if [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     cp /etc/pki/tls/openssl.cnf .
-    sed -i 's/\/etc\/pki\/CA/\/tmp\/demoCA/' openssl.cnf
+    chmod 664 openssl.cnf
+    sed -i -e "s#/etc/pki/CA#./demoCA#" openssl.cnf
     openssl ca -cert mme.cacert.pem -keyfile mme.cakey.pem -in mme.csr.pem -out mme.cert.pem -outdir . -batch -config ./openssl.cnf
   else
     openssl ca -cert mme.cacert.pem -keyfile mme.cakey.pem -in mme.csr.pem -out mme.cert.pem -outdir . -batch
