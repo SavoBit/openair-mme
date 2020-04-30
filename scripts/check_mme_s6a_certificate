@@ -37,10 +37,8 @@ function _create_mme_certs()
   local    output_path=$(readlink -e $1)
   local    fqdn=$2
 
-  if [[ -v OS_BASEDISTRO ]]
+  if [[ ! -v OS_BASEDISTRO ]]
   then
-    echo_success "Nothing to be done."
-  else
     OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
     case "$OS_DISTRO" in
       fedora) OS_BASEDISTRO="fedora";;
