@@ -45,7 +45,12 @@ install_liblfds7.1.0_from_source() {
   then
     echo "Install liblfds7.1.0 from source"
     # Compilers, generators, ...
-    $SUDO apt-get install $OPTION build-essential
+    if [[ "$OS_DISTRO" == "debian" ]]
+    then
+      $SUDO $INSTALLER install -y $OPTION build-essential
+    else
+      $SUDO $INSTALLER install -y $OPTION make gcc
+    fi
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     cd /tmp
     echo "Downloading liblfds7.1.0 archive"
