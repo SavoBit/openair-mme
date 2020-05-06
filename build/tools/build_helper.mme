@@ -125,6 +125,14 @@ check_install_mme_software() {
       python \
       pkg-config"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    case "$(get_distribution_release)" in
+	"centos7")
+	    specific_packages="python mscgen"
+	    ;;
+	"centos8")
+	    specific_packages="python2"
+	    ;;
+    esac
     PACKAGE_LIST="\
       guile-devel \
       libconfig-devel \
@@ -139,10 +147,9 @@ check_install_mme_software() {
       libtool \
       libxml2 \
       libxml2-devel \
-      mscgen \
       openssl \
       check-devel \
-      python \
+      $specific_packages \
       nettle-devel \
       gnutls-devel"
   else
@@ -193,10 +200,18 @@ check_install_mme_software() {
       ethtool \
       vlan"
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    case "$(get_distribution_release)" in
+        "centos7")
+            specific_packages="vconfig"
+            ;;
+        "centos8")
+            specific_packages=""
+            ;;
+    esac
     PACKAGE_LIST="\
       ethtool \
       iproute \
-      vconfig "
+      $specific_packages "
   else
     echo_error "$OS_DISTRO is not a supported distribution."
     return 1
@@ -211,11 +226,18 @@ check_install_mme_software() {
       python-dev \
       unzip"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+    case "$(get_distribution_release)" in
+        "centos7")
+            specific_packages="python-devel pexpect"
+            ;;
+        "centos8")
+            specific_packages="python2-devel"
+            ;;
+    esac
     PACKAGE_LIST="\
       check \
       check-devel \
-      python-devel \
-      pexpect \
+      $specific_packages \
       psmisc \
       unzip"
   elif [[ "$OS_DISTRO" == "fedora" ]]; then
