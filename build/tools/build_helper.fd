@@ -354,29 +354,30 @@ install_opencoord.org_freediameter() {
     OPTION="-y"
   fi
 
+  case "$(get_distribution_release)" in
+    "ubuntu18.04")
+      specific_packages="build-essential cmake-curses-gui g++ libgcrypt-dev libidn11-dev libmysqlclient-dev libpq-dev libsctp1 libsctp-dev libxml2-dev python-dev ssl-cert"
+    ;;
+    "centos7")
+      specific_packages="build-essential cmake-curses-gui g++ libgcrypt-dev libidn11-dev libmysqlclient-dev libpq-dev libsctp1 libsctp-dev libxml2-dev python-dev ssl-cert"
+    ;;
+    "centos8")
+      specific_packages="gcc-c++ patch libgcrypt-devel libidn-devel libpq-devel lksctp-tools lksctp-tools-devel libxml2-devel python2-devel"
+    ;;
+  esac
+
   # libpq-dev 'may' be not needed
   $SUDO $INSTALLER install $OPTION \
+    $specific_packages \
     autoconf  \
     automake  \
     bison     \
-    build-essential \
     cmake \
-    cmake-curses-gui  \
     debhelper \
     flex  \
-    g++ \
     gcc \
     gdb \
-    libgcrypt-dev \
-    libidn11-dev \
-    libmysqlclient-dev \
-    libpq-dev \
-    libsctp1 \
-    libsctp-dev \
-    libxml2-dev \
     mercurial \
-    python-dev \
-    ssl-cert \
     swig
 
   if [[ $prompt =~ [yY](es)* ]]
