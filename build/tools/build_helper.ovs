@@ -38,7 +38,7 @@ install_libfluid_from_source(){
     prompt='y'
     OPTION="-y"
   fi
-  
+
   if [[ $prompt =~ [yY](es)* ]]
   then
     # optional but recommended for secure connection towards controller
@@ -48,7 +48,7 @@ install_libfluid_from_source(){
     ret=$?;[[ $ret -ne 0 ]] && return $ret
 
     SAVEDPWD=${PWD}
-    
+
     $SUDO rm -rf /tmp/fluid
     mkdir /tmp/fluid
     cd /tmp/fluid
@@ -94,7 +94,7 @@ install_gtp_ovs_kernel_module() {
   else
     OPTION=""
   fi
-  
+
   if [ $1 -eq 0 ]; then
     read -p "Do you want to install modified GTP kernel module for OVS ? <y/N> " prompt
   else
@@ -102,7 +102,7 @@ install_gtp_ovs_kernel_module() {
   fi
   if [[ $prompt =~ [yY](es)* ]]
   then
-  
+
     echo "Check kernel"
     current_kernel_release=`uname -r | cut -d '-' -f1`
 
@@ -116,9 +116,9 @@ install_gtp_ovs_kernel_module() {
       echo_error "Kernel in $DATA_PLANE_SUPPORTED_KERNEL_MIN_VERSION...$DATA_PLANE_SUPPORTED_KERNEL_MAX_VERSION required. Aborting installation"
       return 1
     fi
-  
+
     $SUDO modprobe --remove gtp
-      
+
     $SUDO rm -rf /tmp/gtp
     mkdir /tmp/gtp
     cd /tmp/gtp
@@ -163,12 +163,12 @@ ovs_load_kernel_modules(){
   sync
   $SUDO modprobe nf_conntrack
   $SUDO modprobe nf_defrag_ipv6
-  
+
   $SUDO modprobe libcrc32c
-  $SUDO modprobe nf_nat 
-  $SUDO modprobe nf_nat_ipv4 
-  $SUDO modprobe nf_nat_ipv6 
-  
+  $SUDO modprobe nf_nat
+  $SUDO modprobe nf_nat_ipv4
+  $SUDO modprobe nf_nat_ipv6
+
   #$SUDO modprobe openvswitch
   $SUDO insmod /lib/modules/`uname -r`/extra/openvswitch.ko
   ret=$?;[[ $ret -ne 0 ]] && echo_error "Could not load /lib/modules/`uname -r`/extra/openvswitch.ko kernel module" && return $ret
@@ -189,7 +189,7 @@ ovs_load_kernel_modules(){
 ovs_unload_kernel_modules(){
   $SUDO modprobe --quiet --remove vport_gtp
   $SUDO modprobe --quiet --remove vport-geneve
-  $SUDO modprobe --quiet --remove vport-gre  
+  $SUDO modprobe --quiet --remove vport-gre
   $SUDO modprobe --quiet --remove vport-lisp
   $SUDO modprobe --quiet --remove vport-stt
   $SUDO modprobe --quiet --remove vport-vxlan
@@ -224,13 +224,13 @@ ovs_stop() {
 ovs_start() {
   ovs_load_kernel_modules
   [[ $? -ne 0 ]] && return $?
-  
+
    export PATH=$PATH:/usr/local/share/openvswitch/scripts
 
   $SUDO mkdir -m 777 -p /usr/local/var/log/openvswitch/
-  
+
   # From http://www.openvswitch.org/support/dist-docs-2.5/INSTALL.md.html
-  
+
   echo "Starting ovsdb-server..."
   pgrep ovsdb-server || $SUDO ovsdb-server --remote=punix:/usr/local/var/run/openvswitch/db.sock \
                  --remote=db:Open_vSwitch,Open_vSwitch,manager_options \
@@ -244,7 +244,7 @@ ovs_start() {
 
   if [ "$#" -ge 1 ] && [ $1 -eq 1 ]; then
     # Then initialize the database using ovs-vsctl. This is only necessary the first
-    # time after you create the database with ovsdb-tool (but running it at any time 
+    # time after you create the database with ovsdb-tool (but running it at any time
     # is harmless):
     echo "Init ovs db..."
     $SUDO ovs-vsctl --no-wait init
@@ -252,7 +252,7 @@ ovs_start() {
     echo_success "Initialized ovs db."
   fi
 
-  # Then start the main Open vSwitch daemon, telling it to connect to the same 
+  # Then start the main Open vSwitch daemon, telling it to connect to the same
   # Unix domain socket:
   echo "Starting vswitchd..."
   pgrep ovs-vswitchd || $SUDO ovs-vswitchd -v --pidfile --detach --log-file=/usr/local/var/log
@@ -349,9 +349,9 @@ install_ovs_gtp_kernel_space_from_source(){
     if [ "$git_username" == "" ]; then
       if [ $1 -eq 0 ]; then
         echo "You haven't configured your Git yet. Please, provide a name and e-mail address."
-        echo -n 'Name:' 
+        echo -n 'Name:'
         read git_username
-        echo -n 'E-mail:' 
+        echo -n 'E-mail:'
         read git_email
         git config --global user.name "$git_username"
         git config --global user.email "$git_email"
@@ -376,7 +376,7 @@ install_ovs_gtp_kernel_space_from_source(){
     ./boot.sh
     ./configure --with-linux=/lib/modules/`uname -r`/build
     ret=$?;[[ $ret -ne 0 ]] && return $ret
-    make -j`nproc`
+    make $JNPROC
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     cat /tmp/gtp/openair-cn-extras/linux-4.9.0-gtp-module/Module.symvers >> datapath/linux/Module.symvers
     make
@@ -389,7 +389,7 @@ install_ovs_gtp_kernel_space_from_source(){
     $SUDO ovsdb-tool create /usr/local/etc/openvswitch/conf.db vswitchd/vswitch.ovsschema
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     cd $SAVEDPWD
-    
+
     ovs_start 1
   fi
   return 0

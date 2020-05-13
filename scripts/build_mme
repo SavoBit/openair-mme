@@ -46,6 +46,7 @@ function help()
   echo_error "  -FF, --free-diameter-unmod-ext-lib-sc      Install freeDiameter with non modified extension library and external HSS compatibility (not working with OAI HSS)"
   echo_error "  -h,  --help                                Print this help."
   echo_error "  -i,  --check-installed-software            Check installed software packages necessary to build and run MME (support $SUPPORTED_DISTRO)."
+  echo_error "  -j,  --jobs                                Multiple jobs for compiling."
   echo_error "  -u,  --unit-tests                          Trigger unit tests."
   echo_error "  -v,  --verbose                             Make build process verbose."
   echo_error "  -V,  --Verbose                             CMake only build process verbose, display compilation warnings and errors."
@@ -78,7 +79,7 @@ function main()
   local -i verbose=0
   local -i var_check_install_oai_software=0
   local    cmake_args=" "
-  local    make_args="-j`nproc`"
+  export make_args=" "
 
 
   until [ -z "$1" ]
@@ -120,6 +121,13 @@ function main()
         echo "Check installed software packages necessary to build and run EPC (support $SUPPORTED_DISTRO):"
         set_openair_env
         var_check_install_oai_software=1
+        shift;
+        ;;
+      -j | --jobs)
+        # JNPROC used in build of 3rd party libraries
+        export JNPROC="-j`nproc`"
+        # used in building OAI executable
+        make_args="$make_args -j`nproc`"
         shift;
         ;;
       -u | --unit-tests)

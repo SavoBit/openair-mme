@@ -37,7 +37,7 @@ install_gtp_mark_kernel_module() {
   else
     OPTION=""
   fi
-  
+
   if [ $1 -eq 0 ]; then
     read -p "Do you want to install modified GTP kernel module for dedicated bearer , no OVS support ? <y/N> " prompt
   else
@@ -46,7 +46,7 @@ install_gtp_mark_kernel_module() {
   if [[ $prompt =~ [yY](es)* ]]
   then
     $SUDO modprobe --remove gtp
-      
+
     $SUDO rm -rf /tmp/gtp
     mkdir /tmp/gtp
     cd /tmp/gtp
@@ -61,7 +61,7 @@ install_gtp_mark_kernel_module() {
     sudo cp gtp.ko /lib/modules/`uname -r`/kernel/drivers/net/gtp.ko
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     $SUDO depmod -a
-    
+
     $SUDO modprobe udp_tunnel
     $SUDO modprobe ip6_udp_tunnel
     $SUDO modprobe gtp
@@ -114,14 +114,14 @@ install_libgtpnl_from_source() {
     cd libgtpnl
     git reset --hard 345d687
     ret=$?;[[ $ret -ne 0 ]] && return $ret
-    patch --verbose -p1  < $OPENAIRCN_DIR/build/tools/libgtpnl.LTE_dedicated_bearer.v0.patch 
+    patch --verbose -p1  < $OPENAIRCN_DIR/build/tools/libgtpnl.LTE_dedicated_bearer.v0.patch
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     autoreconf -fi
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     ./configure
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     echo "Compiling libgtpnl"
-    make -j`nproc`
+    make $JNPROC
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && return $ret

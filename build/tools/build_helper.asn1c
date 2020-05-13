@@ -73,7 +73,7 @@ install_asn1c_from_source(){
     autoreconf -iv
     ./configure
     ret=$?;[[ $ret -ne 0 ]] && return $ret
-    make  -j`nproc` > /tmp/log_compile_asn1c 2>&1
+    make  $JNPROC > /tmp/log_compile_asn1c 2>&1
     ret=$?;[[ $ret -ne 0 ]] && return $ret
     $SUDO make install
     ret=$?;[[ $ret -ne 0 ]] && return $ret
