@@ -162,10 +162,10 @@ function main()
 
   if [ $var_check_install_oai_software -gt 0 ];then
     update_package_db
-    check_install_mme_software  $force
-    if [ $? -ne 0 ]; then
+    ret=$(check_install_mme_software  $force)
+    if [ $ret -ne 0 ]; then
         echo_error "Error: MME software installation failed"
-        return 1
+        return $ret
     else
         echo_success "MME software installation successful"
         echo "MME not compiled, to compile it, re-run build_mme without -i option"
